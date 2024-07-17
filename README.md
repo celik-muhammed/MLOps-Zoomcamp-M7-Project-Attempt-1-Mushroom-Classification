@@ -7,6 +7,8 @@ MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification
 
 ## Problem Description
 - [x] Describe the problem clearly and thoroughly
+- [x] Notebook
+- [x] Virtual Environment with `pipenv`
 
 ## Cloud Integration
 - [x] Ensure cloud services are used for the project
@@ -57,11 +59,106 @@ MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification
 - Significance: Accurately **predicting whether a mushroom is poisonous** or edible can prevent potential poisoning incidents and ensure safe mushroom consumption.
 - Motivation: This project leverages the largest and most comprehensive attribute-based dataset available for mushrooms, including both primary data based on a textbook for mushroom identification and secondary simulated data. The goal is to develop a robust classification model that can be used for educational and practical purposes in mycology.
 
+### Notebook
+Exploratory Data Analysis (**EDA**), **Model Training**, **Hyperparameter Optimization** Notebook:
+- [MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification.ipynb]()
+
+### Virtual Environment with `pipenv`
+
+Now let's put everything into a virtual environment. We'll use pipenv for that.
+
+Install all the required libraries. Pay attention to the Scikit-Learn, XGBoost version: it should be the same as in the notebook.
+
+After installing the libraries, pipenv creates two files: `Pipfile` and `Pipfile.lock`.
+
+The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virtual env.
+
+- `Pipfile`: Specifies required packages and versions for the project.
+- `Pipfile.lock`: Locks exact package versions for consistent builds.
+
+  ```sh
+  ## Install virtualenv management tool
+  pip install pipenv --user
+  
+  ## Install all the required libraries. Pay attention to the Scikit-Learn version:
+  # pipenv install -r requirements.txt
+  pipenv install pandas pyarrow
+  pipenv install scikit-learn==1.5.0 xgboost==2.0.3 mlflow s3fs
+  pipenv install flask gunicorn
+  ## Installing pytest
+  pipenv install --dev hyperopt requests
+  pipenv install --dev pytest pylint black
+  
+  ## --where Output project home information.
+  pipenv --where
+  ## --venv Output virtualenv information.
+  pipenv --venv
+  ## Enter the Virtual Environment, if required.
+  pipenv run python -V
+  pipenv shell
+  python -V
+  ```
+
 ### Cloud Integration
 **Ensure cloud services are used for the project**
 - **Develop on the cloud OR use Localstack (or similar tool) OR deploy to Kubernetes or similar container management platforms**
   - We use **Docker** and **Localstack** to simulate an **S3 bucket** environment.
   - Our scripts are rewritten to ensure compatibility with **AWS S3**, and the Python code is **containerized** for **deployment**.
+  - Localstack Emulating 80+ AWS Services, Develop and test your AWS applications locally.
+  - **AWS CLI (AWS Command Line Interface)**
+
+    ```sh
+    docker-compose up --build localstack
+    
+    ## docker exec -it <id-name> sh
+    docker exec -it localstack-main sh
+    
+    aws --version
+    aws configure list
+    
+    ## Create a new profile for Localstack in your AWS CLI configuration:
+    aws configure --profile localstack
+    
+    ## Provide any values for the AWS Access Key ID and AWS Secret Access Key
+    ## since Localstack does not validate these credentials.
+    aws configure set aws_access_key_id "test"
+    aws configure set aws_secret_access_key "test"
+    aws configure set region "us-east-1"
+    
+    ## Set the S3 Endpoint URL
+    # type %USERPROFILE%\.aws\config
+    aws configure set s3.endpoint_url "http://localhost:4566" && cat ~/.aws/config
+    
+    ## Creating a Bucket in Localstack
+    aws --endpoint-url="http://localhost:4566" s3 mb "s3://mushroom-dataset"
+    
+    ## Checking Bucket Creation
+    aws --endpoint-url="http://localhost:4566" s3 ls
+    
+    ## Upload the Input File to Localstack S3, make sure file exist
+    aws --endpoint-url="http://localhost:4566" s3 cp \
+        "./data/secondary_data_2023-08.parquet" \
+        "s3://mushroom-dataset/in/secondary_data_2023-08.parquet"
+    
+    ## Checking Bucket
+    aws --endpoint-url="http://localhost:4566" s3 ls "s3://mushroom-dataset/"
+    aws --endpoint-url="http://localhost:4566" s3 ls "s3://mushroom-dataset/in/"
+    
+    ## Delete Bucket
+    aws --endpoint-url="http://localhost:4566" s3 rm --recursive "s3://mushroom-dataset/"
+    ```
+
+  - **LocalStack AWS CLI (awslocal)**
+    - `awslocal` serves as a thin wrapper and a substitute for the standard aws command, 
+    enabling you to run AWS CLI commands within the LocalStack environment 
+    without specifying the `--endpoint-url` parameter or a profile.
+    - Installation:
+
+    ```sh
+    ## Optional LocalStack AWS CLI (awslocal)
+    # pip install awscli-local[ver1]
+    pip install awscli-local
+    ```
 - **Use Infrastructure as Code (IaC) tools for provisioning the infrastructure**
   - We use **Terraform** to create the Localstack environment and run the Python container.
   - The Terraform scripts are included in the repository and documented to automate the provisioning and management of our infrastructure.
@@ -70,15 +167,56 @@ MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification
 **Implement experiment tracking**
 - Use tools like MLflow, Neptune, or TensorBoard to track your experiments.
 - Document the setup and usage instructions for experiment tracking in your repository.
+- [Start the Tracking Server](https://mlflow.org/docs/latest/tracking/server.html#start-the-tracking-server)
+
+  ```python
+  ## https://mlflow.org/docs/latest/tracking/server.html#start-the-tracking-server
+  ## Launch MLflow Tracking Server with Local/Remore Storage
+  ## 0.0.0.0:5000 (default in Docker mode) 127.0.0.1:5000 (default in host mode)
+  python -m mlflow server \
+    --host 0.0.0.0 \
+    --port 5000 \
+    --backend-store-uri "sqlite:///mlruns.db" \
+    --default-artifact-root "s3://mushroom-dataset/model/" \
+    --serve-artifacts
+  ```
+- [pycode/preprocess_data.py](  )
+- [pycode/train.py](  )
+- [pycode/hpo.py](  )
 
 **Register models in a model registry**
 - Register your trained models in a model registry like MLflow Model Registry or Amazon SageMaker Model Registry.
 - Ensure that the registration process is automated and documented.
+- [register_model.py](  )
 
 ### Workflow Orchestration
 **Implement basic workflow orchestration**
 - Use workflow orchestration tools like Apache Airflow, Prefect, or Kubeflow Pipelines to automate your data processing and model training workflows.
 - Document the setup and usage instructions for workflow orchestration in your repository.
+- **🦄 Make data magical**
+  
+  
+  > https://github.com/mage-ai/mlops<br>
+  > https://github.com/mage-ai/mlops-zoomcamp<br>
+  > https://github.com/mage-ai/mage-zoomcamp<br>
+  > https://github.com/mage-ai/mage-ai-terraform-templates<br>
+  > https://github.com/mage-ai/docker<br>
+  > https://github.com/mage-ai/mage-ai<br>
+  > https://github.com/mage-ai/machine_learning<br>
+  
+  ```bash
+  ## Clone the Mage
+  ## https://github.com/mage-ai/mlops
+  git clone https://github.com/mage-ai/mlops.git
+  
+  ## Change directory into the cloned repo:
+  cd mlops
+  
+  ## Launch Mage and the database service (PostgreSQL).
+  ./scripts/start.sh
+  ```
+  
+  > Open http://localhost:6789 in your browser.
 
 **Deploy a fully orchestrated workflow**
 - Ensure that your workflows are deployed and running in a production environment.
