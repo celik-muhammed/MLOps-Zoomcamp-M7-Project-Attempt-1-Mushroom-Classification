@@ -13,7 +13,7 @@ MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification
 ## Cloud Integration
 - [x] Ensure cloud services are used for the project
   - [x] Develop on the cloud OR use Localstack (or similar tool) OR deploy to Kubernetes or similar container management platforms
-  - [x] Use Infrastructure as Code (IaC) tools for provisioning the infrastructure
+  - [ ] Use Infrastructure as Code (IaC) tools for provisioning the infrastructure
 
 ## Experiment Tracking and Model Registry
 - [x] Implement experiment tracking
@@ -32,7 +32,7 @@ MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification
 ## Model Monitoring
 - [x] Implement model monitoring
   - [x] Calculate and report basic metrics
-  - [x] Set up comprehensive model monitoring that sends alerts or runs conditional workflows if metrics thresholds are violated (e.g., retraining, generating debugging dashboard, switching to a different model)
+  - [ ] Set up comprehensive model monitoring that sends alerts or runs conditional workflows if metrics thresholds are violated (e.g., retraining, generating debugging dashboard, switching to a different model)
 
 ## Reproducibility
 - [x] Provide clear instructions on how to run the code
@@ -46,8 +46,8 @@ MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification
 - [x] Write integration tests
 - [x] Use a linter and/or code formatter
 - [x] Create a Makefile for the project
-- [x] Set up pre-commit hooks
-- [x] Implement a CI/CD pipeline
+- [ ] Set up pre-commit hooks
+- [ ] Implement a CI/CD pipeline
 
 --- 
 
@@ -61,7 +61,7 @@ MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification
 
 ### Notebook
 Exploratory Data Analysis (**EDA**), **Model Training**, **Hyperparameter Optimization** Notebook:
-- [MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification.ipynb]()
+- [MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification.ipynb]( MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification.ipynb )
 
 ### Virtual Environment with `pipenv`
 
@@ -79,16 +79,16 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
   ```sh
   ## Install virtualenv management tool
   pip install pipenv --user
-  
+
   ## Install all the required libraries. Pay attention to the Scikit-Learn version:
   # pipenv install -r requirements.txt
   pipenv install pandas pyarrow
-  pipenv install scikit-learn==1.5.0 xgboost==2.0.3 mlflow s3fs
+  pipenv install scikit-learn==1.5.0 xgboost==2.0.3 mlflow s3fs boto3
   pipenv install flask gunicorn
   ## Installing pytest
   pipenv install --dev hyperopt requests
   pipenv install --dev pytest pylint black
-  
+
   ## --where Output project home information.
   pipenv --where
   ## --venv Output virtualenv information.
@@ -105,7 +105,7 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
   - We use **Docker** and **Localstack** to simulate an **S3 bucket** environment.
   - Our scripts are rewritten to ensure compatibility with **AWS S3**, and the Python code is **containerized** for **deployment**.
   - Localstack Emulating 80+ AWS Services, Develop and test your AWS applications locally.
-  - **AWS CLI (AWS Command Line Interface)**
+  - **AWS CLI (AWS Command Line Interface)** - [docker-compose.yml]( docker-compose.yml )
 
     ```sh
     docker-compose up --build localstack
@@ -170,31 +170,69 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
 - [Start the Tracking Server](https://mlflow.org/docs/latest/tracking/server.html#start-the-tracking-server)
 
   ```python
+  ## WE PREFER LOCALLY
   ## https://mlflow.org/docs/latest/tracking/server.html#start-the-tracking-server
   ## Launch MLflow Tracking Server with Local/Remore Storage
   ## 0.0.0.0:5000 (default in Docker mode) 127.0.0.1:5000 (default in host mode)
   python -m mlflow server \
-    --host 0.0.0.0 \
+    --host 127.0.0.1 \
     --port 5000 \
     --backend-store-uri "sqlite:///mlruns.db" \
     --default-artifact-root "s3://mushroom-dataset/model/" \
     --serve-artifacts
   ```
-- [pycode/preprocess_data.py](  )
-- [pycode/train.py](  )
-- [pycode/hpo.py](  )
+
+  ```Dockerfile
+  FROM python:3.11-slim
+
+  RUN pip install mlflow==2.14.2
+
+  EXPOSE 5000
+
+  CMD [ \
+      "mlflow", "server", \
+      "--host", "0.0.0.0", \
+      "--port", "5000" \
+      "--backend-store-uri", "sqlite:///home/mlflow/mlflow.db", \
+      "--default-artifact-root", "s3://mushroom-dataset/model/", \
+      "--serve-artifacts", \
+  ]
+  ```
+
+  And add it to the docker-compose.yaml:
+
+  ```yaml
+  ## docker-compose.yaml
+  services:
+  ## ...
+    ## docker-compose up --build mlflow
+    mlflow:
+      build:
+        context: .
+        dockerfile: mlflow.Dockerfile
+      ports:
+        - "5000:5000"
+      volumes:
+        - "./mlflow:/home/mlflow/"
+      networks:
+        - "back-tier"
+        - "front-tier"
+  ```
+
+- [pycode/preprocess_data.py]( pycode/preprocess_data.py )
+- [pycode/train_s3.py]( pycode/train_s3.py )
+- [pycode/hpo_s3.py]( pycode/hpo_s3.py )
 
 **Register models in a model registry**
 - Register your trained models in a model registry like MLflow Model Registry or Amazon SageMaker Model Registry.
 - Ensure that the registration process is automated and documented.
-- [register_model.py](  )
+- [pycode/register_model_s3.py]( pycode/register_model_s3.py )
 
 ### Workflow Orchestration
 **Implement basic workflow orchestration**
 - Use workflow orchestration tools like Apache Airflow, Prefect, or Kubeflow Pipelines to automate your data processing and model training workflows.
 - Document the setup and usage instructions for workflow orchestration in your repository.
-- **🦄 Make data magical**
-  
+- **🦄 Make data magical**  
   
   > https://github.com/mage-ai/mlops<br>
   > https://github.com/mage-ai/mlops-zoomcamp<br>
@@ -216,17 +254,29 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
   ./scripts/start.sh
   ```
   
-  > Open http://localhost:6789 in your browser.
+  > Open http://localhost:6789 in your browser. 
+  
+  `New pipeline` > `Standard (batch)` > `Name: mushroom_pipeline` > `Create`
+
+  - [pycode/mage_0_ingest_data.py]( pycode/mage_0_ingest_data.py )
+  - [pycode/mage_1_preprocess_data.py]( pycode/mage_1_preprocess_data.py )
+  - [pycode/mage_2_hpo.py]( pycode/mage_2_hpo.py )
+  - [pycode/mage_3_register_model_s3.py]( pycode/mage_3_register_model_s3.py )
 
 **Deploy a fully orchestrated workflow**
 - Ensure that your workflows are deployed and running in a production environment.
 - Provide documentation and scripts to deploy the workflows.
+
+  ![set_trigger](images/set_trigger.png)
+  ![run_trigger](images/run_trigger.png)
 
 ### Model Deployment
 **Deploy the model**
 - **Deploy the model locally**
   - Ensure that the model can be deployed and tested locally.
   - Provide scripts and instructions for local deployment.
+  - Making Input and Output Paths Configurable
+    - [pycode/predict_batch_s3.py]( pycode/predict_batch_s3.py )
 - **Containerize the model deployment code**
   - Use Docker or similar containerization tools to containerize your model deployment code.
   - Provide Dockerfiles and instructions for building and running the containers.
@@ -252,22 +302,71 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
   - Test the instructions yourself or have someone else follow them to ensure they are accurate.
 - **Include versions for all dependencies**
   - Specify the versions of all software dependencies in a requirements.txt or environment.yml file.
+    - [Pipfile]( Pipfile )
 - **Ensure data is available and accessible**
   - Provide access to the data used in the project, either by including it in the repository or providing links to download it.
   - Ensure any preprocessing steps are well documented.
+    - [Secondary Mushroom Dataset]( https://archive.ics.uci.edu/dataset/848/secondary+mushroom+dataset )
 
 ### Best Practices
 **Write unit tests**
 - Write unit tests for your code to ensure individual components work as expected.
 - Include instructions on how to run the tests.
+- Now we need to install `pytest`:
+
+  ```bash
+  pipenv install --dev pytest
+  ```
+
+- Next, create a folder `tests` and create two files. One will be
+- the file with tests. We can name it `test_batch.py`. 
+
+  ```bash
+  mkdir tests
+  touch tests/__init__.py
+  touch tests/test_batch.py
+  ```
+    - [tests/test_batch_s3.py]( tests/test_batch_s3.py )
 
 **Write integration tests**
 - Write integration tests to ensure different components of your project work together correctly.
 - Include instructions on how to run the integration tests.
 
+- Now let's create `integration_test.py`
+
+- We'll use the dataframe we created in (the dataframe for the unit test)
+and save it to S3. We don't need to do anything else: just create a dataframe 
+and save it.
+
+- We will pretend that this is data for January 2023.
+
+- Run the `integration_test.py` script. After that, use AWS CLI to verify that the 
+file was created.
+
+  ```bash
+  mkdir integration_test
+  touch integration_test/__init__.py
+  touch integration_test/integration_test.py
+
+  ## In LocalStack AWS CLI
+  aws --endpoint-url=http://localhost:4566 s3 ls --summarize --human-readable --recursive "s3://mushroom-dataset/in/secondary_data_2023-01.parquet"
+  aws --endpoint-url=http://localhost:4566 s3 ls --summarize --recursive "s3://mushroom-dataset/in/secondary_data_2023-01.parquet"
+  aws --endpoint-url=http://localhost:4566 s3 ls "s3://mushroom-dataset/in/"
+  ## Total Objects: 1
+  ##    Total Size: 12920
+  ```
+    - [integration_test/integration_test.py]( integration_test/integration_test.py )
+
 **Use a linter and/or code formatter**
 - Set up a linter (e.g., pylint, flake8) and/or a code formatter (e.g., black) to maintain code quality and consistency.
 - Include configuration files and instructions.
+- Code quality: Linting `Pylint` and Formatting `black`
+  - https://pylint.readthedocs.io/en/latest/user_guide/usage/run.html
+  - https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html
+
+  ```bash
+  pipenv run pylint --recursive=y .
+  ```
 
 **Create a Makefile for the project**
 - Create a Makefile to automate common tasks like setting up the environment, running tests, and deploying the project.
