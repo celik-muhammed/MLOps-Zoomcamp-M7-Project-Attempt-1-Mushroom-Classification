@@ -51,9 +51,10 @@ MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification
 
 --- 
 
-## Detailed Descriptions
+# Detailed Descriptions
 
-### Problem Description
+## Problem Description
+
 **Describe the problem clearly and thoroughly**
 - Our project **aims to classify mushrooms** as either **edible or poisonous** based on a set of attributes. This **binary classification** task involves predicting the edibility of a mushroom, which is crucial for foraging and safety purposes.
 - Significance: Accurately **predicting whether a mushroom is poisonous** or edible can prevent potential poisoning incidents and ensure safe mushroom consumption.
@@ -99,7 +100,7 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
   python -V
   ```
 
-### Cloud Integration
+## Cloud Integration
 **Ensure cloud services are used for the project**
 - **Develop on the cloud OR use Localstack (or similar tool) OR deploy to Kubernetes or similar container management platforms**
   - We use **Docker** and **Localstack** to simulate an **S3 bucket** environment.
@@ -109,43 +110,46 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
 
     ```sh
     docker-compose up --build localstack
-    
+
     ## docker exec -it <id-name> sh
     docker exec -it localstack-main sh
-    
+
     aws --version
     aws configure list
-    
+    cat ~/.aws/config
+
     ## Create a new profile for Localstack in your AWS CLI configuration:
     aws configure --profile localstack
-    
+
     ## Provide any values for the AWS Access Key ID and AWS Secret Access Key
     ## since Localstack does not validate these credentials.
-    aws configure set aws_access_key_id "test"
-    aws configure set aws_secret_access_key "test"
-    aws configure set region "us-east-1"
-    
+    aws configure set aws_access_key_id "test" #--profile localstack
+    aws configure set aws_secret_access_key "test" #--profile localstack
+    aws configure set region "us-east-1" #--profile localstack
+
     ## Set the S3 Endpoint URL
     # type %USERPROFILE%\.aws\config
-    aws configure set s3.endpoint_url "http://localhost:4566" && cat ~/.aws/config
-    
+    aws configure set s3.endpoint_url "http://localhost:4566" #--profile localstack
+
     ## Creating a Bucket in Localstack
     aws --endpoint-url="http://localhost:4566" s3 mb "s3://mushroom-dataset"
-    
+
     ## Checking Bucket Creation
-    aws --endpoint-url="http://localhost:4566" s3 ls
-    
+    # aws s3 ls --profile localstack
+    aws s3 ls --endpoint-url="http://localhost:4566"
+
     ## Upload the Input File to Localstack S3, make sure file exist
-    aws --endpoint-url="http://localhost:4566" s3 cp \
+    aws s3 cp \
         "./data/secondary_data_2023-08.parquet" \
-        "s3://mushroom-dataset/in/secondary_data_2023-08.parquet"
-    
+        "s3://mushroom-dataset/in/secondary_data_2023-08.parquet" \
+        --endpoint-url="http://localhost:4566"
+
     ## Checking Bucket
-    aws --endpoint-url="http://localhost:4566" s3 ls "s3://mushroom-dataset/"
-    aws --endpoint-url="http://localhost:4566" s3 ls "s3://mushroom-dataset/in/"
-    
+    aws s3 ls "s3://mushroom-dataset/" --endpoint-url="http://localhost:4566"
+    aws s3 ls "s3://mushroom-dataset/in/" --endpoint-url="http://localhost:4566"
+
     ## Delete Bucket
-    aws --endpoint-url="http://localhost:4566" s3 rm --recursive "s3://mushroom-dataset/"
+    aws s3 rm --recursive "s3://mushroom-dataset/" --endpoint-url="http://localhost:4566"
     ```
 
   - **LocalStack AWS CLI (awslocal)**
@@ -158,12 +162,50 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
     ## Optional LocalStack AWS CLI (awslocal)
     # pip install awscli-local[ver1]
     pip install awscli-local
+
+    awslocal --version
     ```
+  - **Check Connection `LocalStack`**
+    ```sh
+    import os
+    import boto3
+    from pprint import pprint
+
+    ## Setting Up Environment Variables
+    ## Load AWS credentials from environment variables
+    os.environ['AWS_ACCESS_KEY_ID']     = "test"
+    os.environ['AWS_SECRET_ACCESS_KEY'] = "test"
+    os.environ['AWS_DEFAULT_REGION']    = "us-east-1"
+    ## Set Docker environment variable, export DOCKER_ENV='1'
+    os.environ['DOCKER_ENV'] = '1'
+    ## Set Localstack S3 endpoint based on Docker environment
+    os.environ['AWS_ENDPOINT_URL'] = (
+        f"http://{'host.docker.internal' if os.getenv('DOCKER_ENV') else 'localhost'}:4566"
+    )
+    ## Create a session with the provided credentials
+    # s3_client = boto3.Session(
+    #     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', 'test'),
+    #     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', 'test'),
+    #     region_name = os.getenv('AWS_DEFAULT_REGION', 'us-east-1'),
+    # ).client('s3', endpoint_url=os.getenv('AWS_ENDPOINT_URL', 'http://localhost:4566'))  # LocalStack S3 endpoint
+
+    ## Create an S3 client with LocalStack endpoint
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', 'test'),
+        aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', 'test'),
+        region_name = os.getenv('AWS_DEFAULT_REGION', 'us-east-1'),
+        endpoint_url=os.getenv('AWS_ENDPOINT_URL', 'http://localhost:4566')  # LocalStack S3 endpoint
+    )
+    response = s3_client.list_buckets()
+    pprint(response)
+    ```
+
 - **Use Infrastructure as Code (IaC) tools for provisioning the infrastructure**
   - We use **Terraform** to create the Localstack environment and run the Python container.
   - The Terraform scripts are included in the repository and documented to automate the provisioning and management of our infrastructure.
 
-### Experiment Tracking and Model Registry
+## Experiment Tracking and Model Registry
 **Implement experiment tracking**
 - Use tools like MLflow, Neptune, or TensorBoard to track your experiments.
 - Document the setup and usage instructions for experiment tracking in your repository.
@@ -182,41 +224,81 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
     --serve-artifacts
   ```
 
+- Build mlflow.Dockerfile:
+
   ```Dockerfile
+  ## mlflow.Dockerfile
+  ## The official MLflow Docker image is available on GitHub Container Registry at https://ghcr.io/mlflow/mlflow
+  ## Use the official Python image from the Docker Hub
   FROM python:3.11-slim
 
-  RUN pip install mlflow==2.14.2
+  ## Install required packages
+  RUN pip install pip mlflow boto3 s3fs -U
 
+  ## Environment variables for AWS and MLflow
+  ENV AWS_ACCESS_KEY_ID="test"
+  ENV AWS_SECRET_ACCESS_KEY="test"
+  ENV AWS_REGION="us-east-1"
+  ENV AWS_ENDPOINT_URL="http://localhost:4566"
+  ## Set the tracking URI using an environment variable
+  ENV MLFLOW_TRACKING_URI="sqlite:///mlruns.db"
+  ENV MLFLOW_HOME="/app"
+
+  ## Expose the port the MLflow server will run on
   EXPOSE 5000
 
+  ## Set the working directory
+  WORKDIR "/app"
+
+  ## Command to run the MLflow server
   CMD [ \
-      "mlflow", "server", \
-      "--host", "0.0.0.0", \
-      "--port", "5000" \
-      "--backend-store-uri", "sqlite:///home/mlflow/mlflow.db", \
-      "--default-artifact-root", "s3://mushroom-dataset/model/", \
-      "--serve-artifacts", \
+    "mlflow", "server", \
+    "--host", "0.0.0.0", \
+    "--port", "5000", \
+    "--backend-store-uri", "sqlite:///mlruns.db", \
+    "--default-artifact-root", "s3://mushroom-dataset/model/", \
+    "--serve-artifacts" \
   ]
   ```
 
-  And add it to the docker-compose.yaml:
+- And add it to the docker-compose.yaml:
 
   ```yaml
   ## docker-compose.yaml
   services:
-  ## ...
+    ## ...
     ## docker-compose up --build mlflow
     mlflow:
+      container_name: "mlflow-main"
+      ## The official MLflow Docker image is available on GitHub Container Registry at https://ghcr.io/mlflow/mlflow
       build:
         context: .
-        dockerfile: mlflow.Dockerfile
+        dockerfile: "mlflow.Dockerfile"
+      working_dir: "/app"
+      environment:
+        ## Environment variables for AWS and MLflow
+        AWS_ACCESS_KEY_ID: "test"
+        AWS_SECRET_ACCESS_KEY: "test"
+        AWS_REGION: "us-east-1"
+        AWS_ENDPOINT_URL: "http://localstack:4566"
+        ## Set the tracking URI using an environment variable
+        MLFLOW_TRACKING_URI: "sqlite:///mlruns.db"
+        MLFLOW_HOME: "/app"
       ports:
-        - "5000:5000"
+        # - "5000:5000"
+        - "5001:5000"
       volumes:
-        - "./mlflow:/home/mlflow/"
+        - "./mlruns.db:/app/mlruns.db"  # connect existing db file
       networks:
         - "back-tier"
         - "front-tier"
+      command: >
+        mlflow server 
+          --host 0.0.0.0 
+          --port 5000 
+          --backend-store-uri "sqlite:///mlruns.db" 
+          --default-artifact-root "s3://mushroom-dataset/model/" 
+          --serve-artifacts
   ```
 
 - [pycode/preprocess_data.py]( pycode/preprocess_data.py )
@@ -228,7 +310,8 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
 - Ensure that the registration process is automated and documented.
 - [pycode/register_model_s3.py]( pycode/register_model_s3.py )
 
-### Workflow Orchestration
+## Workflow Orchestration
+
 **Implement basic workflow orchestration**
 - Use workflow orchestration tools like Apache Airflow, Prefect, or Kubeflow Pipelines to automate your data processing and model training workflows.
 - Document the setup and usage instructions for workflow orchestration in your repository.
@@ -270,21 +353,55 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
   ![set_trigger](images/set_trigger.png)
   ![run_trigger](images/run_trigger.png)
 
-### Model Deployment
+## Model Deployment
 **Deploy the model**
 - **Deploy the model locally**
-  - Ensure that the model can be deployed and tested locally.
-  - Provide scripts and instructions for local deployment.
+  - Ensure that the model can be deployed and tested locally.  
   - Making Input and Output Paths Configurable
-    - [pycode/predict_batch_s3.py]( pycode/predict_batch_s3.py )
+  - Provide scripts and instructions for local deployment.
+  - Batch (offline) inference: [pycode/predict_batch.py]( pycode/predict_batch.py )
+
 - **Containerize the model deployment code**
   - Use Docker or similar containerization tools to containerize your model deployment code.
   - Provide Dockerfiles and instructions for building and running the containers.
+  - Batch (offline) inference: [pycode/predict_batch_s3.py]( pycode/predict_batch_s3.py )
+
 - **Ensure the model can be deployed to the cloud or special tools for model deployment are used**
   - Set up deployment to a cloud platform or use specialized tools like AWS SageMaker, Google AI Platform, or Azure ML.
   - Document the cloud deployment process and any specific tools used.
+  - Batch (offline) inference: [pycode/predict_batch_s3.py]( pycode/predict_batch_s3.py )
+  
+  - Build batch.Dockerfile:
+
+    ```Dockerfile
+    ## batch.Dockerfile
+    ## Use the official Python image from the Docker Hub
+    FROM python:3.11-slim
+
+    ## Set the working directory
+    WORKDIR /app
+
+    ## Copy the Pipfile and Pipfile.lock to the Docker container
+    COPY [ "Pipfile", "Pipfile.lock", "./" ]
+    ## Copy your script file to the Docker container
+    COPY "pycode/predict_batch.py" "/app/predict_batch.py"
+    COPY "pycode/predict_batch_s3.py" "/app/predict_batch_s3.py"
+    ## Copy the model directory into the container at /app/model
+    # COPY ["model/", "model/"]
+
+    ## Install pipenv
+    RUN pip install pip pipenv -U
+    ## Install the dependencies using pipenv
+    RUN pipenv install --system --deploy
+
+    # Set the command to run your script with default arguments
+    ENTRYPOINT ["python", "predict_batch_s3.py"]
+    CMD ["2023", "8"]
+    ```
+
 
 ### Model Monitoring
+
 **Implement model monitoring**
 - **Calculate and report basic metrics**
   - Set up monitoring to track basic metrics like accuracy, precision, recall, and F1 score.
@@ -365,6 +482,7 @@ file was created.
   - https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html
 
   ```bash
+  ## Your code has been rated at 8.86/10 (previous run: 8.86/10, 0.00)
   pipenv run pylint --recursive=y .
   ```
 
