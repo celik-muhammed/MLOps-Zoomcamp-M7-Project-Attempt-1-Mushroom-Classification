@@ -84,11 +84,11 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
   ## Install all the required libraries. Pay attention to the Scikit-Learn version:
   # pipenv install -r requirements.txt
   pipenv install pandas pyarrow
-  pipenv install scikit-learn==1.5.0 xgboost==2.0.3 mlflow s3fs boto3
+  pipenv install scikit-learn==1.5.0 xgboost==2.0.3 mlflow boto3 s3fs
   pipenv install flask gunicorn
   ## Installing pytest
-  pipenv install --dev hyperopt requests
-  pipenv install --dev pytest pylint black
+  pipenv install --dev requests hyperopt
+  pipenv install --dev pytest pylint black isort
 
   ## --where Output project home information.
   pipenv --where
@@ -158,13 +158,13 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
     without specifying the `--endpoint-url` parameter or a profile.
     - Installation:
 
-    ```sh
-    ## Optional LocalStack AWS CLI (awslocal)
-    # pip install awscli-local[ver1]
-    pip install awscli-local
+      ```sh
+      ## Optional LocalStack AWS CLI (awslocal)
+      # pip install awscli-local[ver1]
+      pip install awscli-local
 
-    awslocal --version
-    ```
+      awslocal --version
+      ```
   - **Check Connection `LocalStack`**
     ```sh
     import os
@@ -350,8 +350,8 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
 - Ensure that your workflows are deployed and running in a production environment.
 - Provide documentation and scripts to deploy the workflows.
 
-  ![set_trigger](images/set_trigger.png)
-  ![run_trigger](images/run_trigger.png)
+  ![set_trigger.png](images/set_trigger.png)
+  ![run_trigger.png](images/run_trigger.png)
 
 ## Model Deployment
 **Deploy the model**
@@ -409,6 +409,8 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
 - **Set up comprehensive model monitoring that sends alerts or runs conditional workflows if metrics thresholds are violated (e.g., retraining, generating debugging dashboard, switching to a different model)**
   - Implement more advanced monitoring that can trigger actions based on metric thresholds.
   - Document the monitoring setup and the actions taken when thresholds are crossed.
+  - [dashboard_cls_preset_f1.json](dashboards/dashboard_cls_preset_f1.json)
+  - ![cls_preset_f1.png](images/cls_preset_f1.png)
 
 ### Reproducibility
 **Provide clear instructions on how to run the code**
@@ -489,6 +491,7 @@ file was created.
 **Create a Makefile for the project**
 - Create a Makefile to automate common tasks like setting up the environment, running tests, and deploying the project.
 - Document the available Makefile targets and their usage.
+- [Makefile]( Makefile )
 
 **Set up pre-commit hooks**
 - Use pre-commit hooks to enforce code quality checks before commits (e.g., running linters, formatters, and tests).
