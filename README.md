@@ -406,9 +406,13 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
 - **Calculate and report basic metrics**
   - Set up monitoring to track basic metrics like accuracy, precision, recall, and F1 score.
   - Ensure that these metrics are logged and accessible for review.
+   - [baseline_model_data.ipynb]( baseline_model_data.ipynb )
+   - [debugging_data.ipynb]( debugging_data.ipynb )
 - **Set up comprehensive model monitoring that sends alerts or runs conditional workflows if metrics thresholds are violated (e.g., retraining, generating debugging dashboard, switching to a different model)**
   - Implement more advanced monitoring that can trigger actions based on metric thresholds.
   - Document the monitoring setup and the actions taken when thresholds are crossed.
+   - [docker-compose.override.yml]( docker-compose.override.yml )
+   - [pycode/evidently_metrics_calculation.py]( pycode/evidently_metrics_calculation.py )
   - [dashboard_cls_preset_f1.json](dashboards/dashboard_cls_preset_f1.json)
   - ![cls_preset_f1.png](images/cls_preset_f1.png)
 
