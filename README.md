@@ -417,7 +417,7 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
    - [docker-compose.override.yml]( docker-compose.override.yml )
    - [pycode/evidently_metrics_calculation.py]( pycode/evidently_metrics_calculation.py )
   - [dashboard_cls_preset_f1.json](dashboards/dashboard_cls_preset_f1.json)
-  - ![cls_preset_f1.png](images/cls_preset_f1.png)
+  ![cls_preset_f1.png](images/cls_preset_f1.png)
 
 ### Reproducibility
 **Provide clear instructions on how to run the code**
