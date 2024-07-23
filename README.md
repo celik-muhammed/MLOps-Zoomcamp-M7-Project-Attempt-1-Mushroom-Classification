@@ -62,7 +62,7 @@ MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification
 
 ### Notebook
 Exploratory Data Analysis (**EDA**), **Model Training**, **Hyperparameter Optimization** Notebook:
-- [MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification.ipynb]( MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification.ipynb )
+- [MLOps-Zoomcamp-M7-Project-Attempt-1-Mushroom-Classification.ipynb]( MLOps-Zoomcamp-M7-Project-Attempt-1.ipynb )
 
 ### Virtual Environment with `pipenv`
 
