@@ -411,6 +411,9 @@ The `Pipfile.lock` file keeps the hashes of the dependencies we use for the virt
 - **Set up comprehensive model monitoring that sends alerts or runs conditional workflows if metrics thresholds are violated (e.g., retraining, generating debugging dashboard, switching to a different model)**
   - Implement more advanced monitoring that can trigger actions based on metric thresholds.
   - Document the monitoring setup and the actions taken when thresholds are crossed.
+   - [.env]( .env )
+   - [config/grafana_datasources.yaml]( config/grafana_datasources.yaml )
+   - [config/grafana_dashboards.yaml]( config/grafana_dashboards.yaml )
    - [docker-compose.override.yml]( docker-compose.override.yml )
    - [pycode/evidently_metrics_calculation.py]( pycode/evidently_metrics_calculation.py )
   - [dashboard_cls_preset_f1.json](dashboards/dashboard_cls_preset_f1.json)
@@ -496,6 +499,7 @@ file was created.
 - Create a Makefile to automate common tasks like setting up the environment, running tests, and deploying the project.
 - Document the available Makefile targets and their usage.
 - [Makefile]( Makefile )
+- [pyproject.toml]( pyproject.toml )
 
 **Set up pre-commit hooks**
 - Use pre-commit hooks to enforce code quality checks before commits (e.g., running linters, formatters, and tests).
