@@ -1,0 +1,35 @@
+## config/grafana_datasources.yaml
+## Reference: https://grafana.com/docs/grafana-cloud/connect-externally-hosted/data-sources/postgres/#provisioning-example
+
+## config file version
+apiVersion: 1
+
+## Defines the data sources that Grafana should connect to
+## list of datasources to insert/update
+## available in the database
+datasources:
+    ## Specifies the name of the data source
+  - name: Postgres
+    ## Specifies the type of the data source
+    type: postgres
+    ## Specifies how Grafana should access the data source
+    ## The 'proxy' mode means that all requests are proxied via the Grafana backend/server
+    access: proxy
+    ## Specifies the URL (including the port number) of the data source
+    url: db:5432
+    ## Specifies the username that Grafana should use to connect to the database
+    user: root
+    ## Specifies secure data like passwords
+    secureJsonData:
+      ## Sets the password for the database connection
+      password: 'root'
+    jsonData:
+      database: "test"
+      ## Disables SSL mode for the database connection
+      sslmode: 'disable' # disable/require/verify-ca/verify-full
+      # maxOpenConns: 100 # Grafana v5.4+
+      # maxIdleConns: 100 # Grafana v5.4+
+      # maxIdleConnsAuto: true # Grafana v9.5.1+
+      # connMaxLifetime: 14400 # Grafana v5.4+
+      # postgresVersion: 903 # 903=9.3, 904=9.4, 905=9.5, 906=9.6, 1000=10
+      # timescaledb: false

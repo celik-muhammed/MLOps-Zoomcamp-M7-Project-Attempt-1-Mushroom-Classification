@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pandas = "*"
+pyarrow = "*"
+scikit-learn = "==1.5.0"
+xgboost = "==2.0.3"
+mlflow = "*"
+boto3 = "*"
+s3fs = "*"
+flask = "*"
+gunicorn = "*"
+
+[dev-packages]
+requests = "*"
+hyperopt = "*"
+pytest = "*"
+pylint = "*"
+black = "*"
+isort = "*"
+
+[requires]
+python_version = "3.11"

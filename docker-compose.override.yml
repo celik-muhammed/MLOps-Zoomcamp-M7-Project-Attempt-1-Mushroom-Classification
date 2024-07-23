@@ -1,0 +1,128 @@
+## Primary File : docker-compose.yml
+## Override File: docker-compose.override.yml (automatically included if present)
+## https://docs.localstack.cloud/getting-started/installation/#docker-compose
+## Specifies the Docker Compose file version
+version: '3.8'
+
+## Declares volumes that can be used by services in the Docker Compose file
+volumes:
+  ## Define a named volume for persisting PostgreSQL data
+  postgres_data:
+    ## further added to be a local driver. So when the container is restarted the data will be available from docker managed volume.
+    driver: local
+  ## Define a named volume for persisting dpage/pgadmin4 data
+  # pgadmin_data:
+  ## Declares a volume named grafana/grafana data
+  grafana_data:
+
+
+## Declares services (containers) that will be run by Docker Compose
+services:
+  ## Defines the PostgreSQL service, as "POSTGRES_HOST"
+  db:
+    ## Ensures that the service is restarted if it fails
+    restart: "on-failure"
+    ## Optional: Define a custom container name
+    container_name: "postgres_container"
+    ## Use the latest official PostgreSQL Docker image
+    image: "postgres:latest"
+    ## Specifies the environment file to use
+    env_file: ".env"
+    ## Sets environment variables for the service
+    # environment:
+      # POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      # POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-changeme}"
+      ## Postgres by default will assume a connection to a database with the same name as the user if no database is supplied.
+      # POSTGRES_DB: "${POSTGRES_DB:-postgres}"
+    ## Specifies volumes to mount for the PostgreSQL service
+    volumes:
+      ## Mount a volume for persisting PostgreSQL data
+      - "./postgres_data:/var/lib/postgresql/data:rw"
+    ## External Access: Used to specify port mappings between the Docker host and the container.
+    ## "<host_port>:<container_port>"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    ## Specifies the networks that this service is part of
+    networks:
+      - "back-tier"
+
+  ## Defines a service named adminer
+  adminer:
+    ## Restart policy: always restart the container if it stops
+    restart: "always"
+    ## Optional: Define a custom container name
+    container_name: "adminer_container"
+    ## Use the official Adminer Docker image
+    image: "adminer:latest"
+    ## Specifies the environment file to use
+    env_file: ".env"
+    ## Sets environment variables for the service
+    environment:
+      ADMINER_PORT: "${ADMINER_PORT:-9002}"
+    ## External Access: Used to specify port mappings between the Docker host and the container.
+    ## "<host_port>:<container_port>"
+    ports:
+      - "${ADMINER_PORT:-8080}:8080"
+    ## Specifies the networks that this service is part of
+    networks:
+      - "back-tier"
+      - "front-tier"
+    # command: ["php", "-d", "post_max_size=500M", "-d", "upload_max_filesize=500M", "-S", "0.0.0.0:8080", "-t", "/var/www/html"]
+
+  ## Defines a service named "pgadmin"
+  pgadmin:
+    ## Ensures that the service is restarted unless explicitly stopped by the user
+    restart: "unless-stopped"
+    ## Optional: Define a custom container name
+    container_name: "pgadmin_container"
+    ## Use the official pgAdmin Docker image
+    image: "dpage/pgadmin4:latest"
+    ## Specifies the environment file to use
+    env_file: ".env"
+    ## Sets environment variables for the service
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_DEFAULT_PASSWORD:-admin}"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    # volumes:
+    #    - pgadmin_data:/var/lib/pgadmin
+    ## External Access: Used to specify port mappings between the Docker host and the container.
+    ## "<host_port>:<container_port>"
+    ports:
+      - "${PGADMIN_LISTEN_PORT:-80}:${PGADMIN_LISTEN_PORT:-80}"
+    ## Specifies the networks that this service is part of
+    networks:
+      - "back-tier"
+      - "front-tier"
+    ## turn off logging for pgadmin because it's noisy #23
+    logging:
+      driver: none
+
+  ## docker compose up --build grafana
+  ## Defines a service named grafana
+  grafana:
+    ## Restart policy: always restart the container if it stops
+    ## default user admin passwd admin
+    restart: "always"
+    ## Use the official grafana Docker image
+    image: "grafana/grafana:latest"
+    ## Sets the user ID under which the service will run
+    user: "472"
+    ## External Access: Used to specify port mappings between the Docker host and the container.
+    ## "<host_port>:<container_port>"
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    ## Specifies volumes to mount for the grafana service
+    volumes:
+      # Maps a local file to a file inside the container, and makes it read-only
+      - "./config/grafana_datasources.yaml:/etc/grafana/provisioning/datasources/datasource.yaml:ro"
+      - "./config/grafana_dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro"
+      - "./dashboards:/var/lib/grafana/dashboards"
+    ## Specifies the networks that this service is part of
+    networks:
+      - "back-tier"
+      - "front-tier"
+    depends_on:
+      - db
+      - adminer
+      - pgadmin

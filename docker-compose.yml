@@ -1,0 +1,75 @@
+## Primary File : docker-compose.yml
+## Override File: docker-compose.override.yml (automatically included if present)
+## https://docs.localstack.cloud/getting-started/installation/#docker-compose
+## docker compose config
+## Specifies the Docker Compose file version
+version: '3.8'
+
+## Defines networks that can be used by services in the Docker Compose file
+networks:
+  ## Declares a network named "back-tier"
+  back-tier:
+  ## Declares a network named "front-tier"
+  front-tier:
+    # driver: bridge
+
+## Declares services (containers) that will be run by Docker Compose
+services:
+  ## docker compose up --build localstack
+  localstack:
+    stdin_open: true # used for interactive debugging
+    tty: true # used for interactive debugging
+    restart: "always"
+    container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
+    image: "localstack/localstack:latest"
+    working_dir: "/opt/code/localstack"  # default
+    ports:
+      - "4566:4566"            # LocalStack Gateway
+      # - "4510-4559:4510-4559"  # external services port range
+    environment:
+      ## LocalStack configuration: https://docs.localstack.cloud/references/configuration/
+      - SERVICES=${SERVICES:-s3,sqs}
+      - DEBUG=${DEBUG:-0}
+      - PERSISTENCE=1
+      ## Local directory for saving persistent data. Use PERSISTENCE=1 instead.
+      # - DATA_DIR="/tmp/localstack/data"  # default PERSISTENCE=0
+    volumes:
+      # - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./data:/opt/code/localstack/data"
+    networks:
+      - back-tier
+      - front-tier
+
+  ## docker compose up --build mlflow
+  mlflow:
+    container_name: "mlflow-main"
+    ## The official MLflow Docker image is available on GitHub Container Registry at https://ghcr.io/mlflow/mlflow
+    build:
+      context: .
+      dockerfile: "mlflow.Dockerfile"
+    working_dir: "/app"
+    environment:
+      ## Environment variables for AWS and MLflow
+      AWS_ACCESS_KEY_ID: "test"
+      AWS_SECRET_ACCESS_KEY: "test"
+      AWS_REGION: "us-east-1"
+      AWS_ENDPOINT_URL: "http://localstack:4566"
+      ## Set the tracking URI using an environment variable
+      MLFLOW_TRACKING_URI: "sqlite:///mlruns.db"
+      MLFLOW_HOME: "/app"
+    ports:
+      # - "5000:5000"
+      - "5001:5000"
+    volumes:
+      - "./mlruns.db:/app/mlruns.db"  # connect existing db file
+    networks:
+      - "back-tier"
+      - "front-tier"
+    command: >
+      mlflow server 
+        --host 0.0.0.0 
+        --port 5000 
+        --backend-store-uri "sqlite:///mlruns.db" 
+        --default-artifact-root "s3://mushroom-dataset/model/" 
+        --serve-artifacts
